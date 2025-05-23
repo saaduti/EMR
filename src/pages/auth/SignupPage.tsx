@@ -1,27 +1,24 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Stethoscope, ShieldCheck } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { Stethoscope, ShieldCheck, UserPlus } from 'lucide-react';
 import Button from '../../components/common/Button';
 
 const schema = z.object({
+  name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required')
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  role: z.enum(['Doctor', 'Patient'])
 });
 
 type FormValues = z.infer<typeof schema>;
 
-const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+const SignupPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const from = location.state?.from?.pathname || '/dashboard';
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema)
@@ -32,7 +29,7 @@ const LoginPage: React.FC = () => {
       setError(null);
       setIsLoading(true);
 
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -43,7 +40,7 @@ const LoginPage: React.FC = () => {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Failed to login');
+        throw new Error(result.message || 'Failed to register');
       }
 
       // Store token and user data
@@ -55,10 +52,9 @@ const LoginPage: React.FC = () => {
         role: result.role
       }));
 
-      await login(data.email, data.password);
-      navigate(from, { replace: true });
+      navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login');
+      setError(err instanceof Error ? err.message : 'Failed to register');
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +67,12 @@ const LoginPage: React.FC = () => {
           <Stethoscope size={48} className="text-primary-600" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-neutral-900">
-          Sign in to your account
+          Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-neutral-600">
           Or{' '}
-          <Link to="/signup" className="font-medium text-primary-600 hover:text-primary-500">
-            create a new account
+          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500">
+            sign in to your existing account
           </Link>
         </p>
       </div>
@@ -84,6 +80,22 @@ const LoginPage: React.FC = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-neutral-200">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label htmlFor="name" className="form-label">
+                Full Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                className={`form-input ${errors.name ? 'border-error-300 focus:ring-error-500' : ''}`}
+                {...register('name')}
+              />
+              {errors.name && (
+                <p className="form-error">{errors.name.message}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="email" className="form-label">
                 Email address
@@ -107,7 +119,7 @@ const LoginPage: React.FC = () => {
               <input
                 id="password"
                 type="password"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 className={`form-input ${errors.password ? 'border-error-300 focus:ring-error-500' : ''}`}
                 {...register('password')}
               />
@@ -116,24 +128,48 @@ const LoginPage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-neutral-700">
-                  Remember me
+            <div>
+              <label className="form-label">Account Type</label>
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <label className="relative flex cursor-pointer rounded-lg border bg-white p-4 focus:outline-none">
+                  <input
+                    type="radio"
+                    value="Patient"
+                    className="sr-only"
+                    {...register('role')}
+                  />
+                  <span className="flex flex-1">
+                    <span className="flex flex-col">
+                      <span className="block text-sm font-medium text-neutral-900">Patient</span>
+                      <span className="mt-1 flex items-center text-sm text-neutral-500">
+                        Access your medical records and appointments
+                      </span>
+                    </span>
+                  </span>
+                  <span className="pointer-events-none absolute -inset-px rounded-lg border-2" aria-hidden="true"></span>
+                </label>
+
+                <label className="relative flex cursor-pointer rounded-lg border bg-white p-4 focus:outline-none">
+                  <input
+                    type="radio"
+                    value="Doctor"
+                    className="sr-only"
+                    {...register('role')}
+                  />
+                  <span className="flex flex-1">
+                    <span className="flex flex-col">
+                      <span className="block text-sm font-medium text-neutral-900">Doctor</span>
+                      <span className="mt-1 flex items-center text-sm text-neutral-500">
+                        Manage patients and medical records
+                      </span>
+                    </span>
+                  </span>
+                  <span className="pointer-events-none absolute -inset-px rounded-lg border-2" aria-hidden="true"></span>
                 </label>
               </div>
-
-              <div className="text-sm">
-                <Link to="#" className="font-medium text-primary-600 hover:text-primary-500">
-                  Forgot your password?
-                </Link>
-              </div>
+              {errors.role && (
+                <p className="form-error">{errors.role.message}</p>
+              )}
             </div>
 
             {error && (
@@ -155,8 +191,9 @@ const LoginPage: React.FC = () => {
                 variant="primary"
                 className="w-full"
                 isLoading={isLoading}
+                icon={<UserPlus size={16} />}
               >
-                Sign in
+                Create Account
               </Button>
             </div>
           </form>
@@ -166,4 +203,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default SignupPage;
