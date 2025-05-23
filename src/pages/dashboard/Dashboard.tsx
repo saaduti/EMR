@@ -73,7 +73,7 @@ const Dashboard: React.FC = () => {
               <CalendarDays size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-secondary-100">Appointments Today</p>
+              <p className="text-sm font-medium text-secondary-100">Follow-ups Due</p>
               <p className="text-2xl font-bold">{isDoctor ? '8' : isPatient ? '1' : '32'}</p>
             </div>
           </div>
@@ -85,7 +85,7 @@ const Dashboard: React.FC = () => {
               <ClipboardList size={24} />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-accent-100">Pending Forms</p>
+              <p className="text-sm font-medium text-accent-100">Discharged Patients</p>
               <p className="text-2xl font-bold">{isDoctor ? '12' : isPatient ? '2' : '47'}</p>
             </div>
           </div>
